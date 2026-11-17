@@ -40,3 +40,20 @@ npm ci
 npm run build -- --base /THIT_HOMEPAGE/
 npm run check:build -- /THIT_HOMEPAGE/
 ```
+
+## 페이지 구성
+
+홈은 주요 서비스와 회사 소개의 요약을 제공하며 대메뉴별로 독립 페이지를 제공합니다.
+
+| 메뉴 | 경로 | 내용 |
+| --- | --- | --- |
+| 홈 | `/` | 메인 비주얼, 주요 서비스, 회사·상담 페이지 연결 |
+| Company | `/company/` | 회사 소개, 브랜드 의미, 핵심가치, 미션·비전 |
+| Services | `/services/` | 개발·운영·인력·AI 서비스 소개와 수행 범위 |
+| AI Consulting | `/ai/` | 확장 계획, 활용 과제, 5단계 도입 방향, 도입 원칙 |
+| Our Approach | `/approach/` | 업무 이해, 기술 연결, 구축, 운영·개선 방식 |
+| Contact | `/contact/` | 상담 폼, 메일·전화·주소 안내 |
+
+대메뉴 이름은 각 페이지로 이동하고 옆 화살표는 하위 메뉴를 펼칩니다. 서비스 직접 링크는 `/services/?service=maintenance#services`처럼 선택 상태를 포함합니다.
+
+Vite의 다중 HTML 진입점을 사용하므로 각 URL의 직접 접속과 새로고침이 정적 호스팅에서 동작합니다. GitHub Pages에서는 위 경로 앞에 `/THIT_HOMEPAGE`가 붙습니다. SPA용 404 우회나 별도 서버는 필요하지 않습니다. 공통 레이아웃은 `src/App.vue`, 페이지별 내용은 `src/pages/`, URL 및 메뉴는 `src/site.js`에서 관리합니다. CI는 여섯 HTML 페이지와 각 페이지의 제목·정적 파일 경로를 검증합니다.

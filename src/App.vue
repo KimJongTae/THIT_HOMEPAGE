@@ -1,38 +1,77 @@
 <script setup>
 import {ref,onMounted,onUnmounted,nextTick} from 'vue'
 import {company} from './company'
-const logoUrl = import.meta.env.BASE_URL + 'thit-logo.jpg'
-import ServiceVisual from './ServiceVisual.vue'
+import {navigation,currentPage,pageUrl} from './site'
 import {useMotion} from './motion'
-const expandedGroup=ref(null)
-const navigation=[{label:'Company',id:'company',children:[{label:'THIT 소개',id:'company'},{label:'브랜드 의미',id:'identity'},{label:'핵심가치',id:'values'}]},{label:'Services',id:'services',children:[{label:'소프트웨어 개발',id:'services',service:0},{label:'유지보수 · 운영 지원',id:'services',service:1},{label:'IT 전문인력 지원',id:'services',service:2}]},{label:'AI Consulting',id:'ai',children:[{label:'AI 도입 방향',id:'ai'},{label:'도입 단계',id:'ai-process'},{label:'활용 과제',id:'ai-use'}]},{label:'Our Approach',id:'approach',children:[{label:'함께하는 방식',id:'approach'}]},{label:'Contact',id:'contact',children:[{label:'프로젝트 상담',id:'contact'},{label:'연락처 안내',id:'contact-details'}]}]
-function navigate(item){if(item.service!==undefined)selected.value=item.service;menu.value=false;expandedGroup.value=null}
+import HomePage from './pages/HomePage.vue'
+import CompanyPage from './pages/CompanyPage.vue'
+import ServicesPage from './pages/ServicesPage.vue'
+import AiPage from './pages/AiPage.vue'
+import ApproachPage from './pages/ApproachPage.vue'
+import ContactPage from './pages/ContactPage.vue'
+
+const logoUrl=import.meta.env.BASE_URL+'thit-logo.jpg'
+const pages={home:HomePage,company:CompanyPage,services:ServicesPage,ai:AiPage,approach:ApproachPage,contact:ContactPage}
+const pageInfo=navigation.find(item=>item.id===currentPage)
+const expandedGroup=ref(null),menu=ref(false),active=ref(0),paused=ref(false),detail=ref(null)
+const {slideProgress,scrolled,reset}=useMotion(()=>{active.value=(active.value+1)%3},paused)
 function changeSlide(i){active.value=i;reset()}
-function tabKey(e,i){let n;if(e.key==='ArrowRight')n=(i+1)%4;if(e.key==='ArrowLeft')n=(i+3)%4;if(e.key==='Home')n=0;if(e.key==='End')n=3;if(n!==undefined){e.preventDefault();selected.value=n;nextTick(()=>document.getElementById('tab-'+n)?.focus())}}
-const menu=ref(false), active=ref(0), detail=ref(null), paused=ref(false), sent=ref(false)
-const {slideProgress,currentSection,scrolled,reset}=useMotion(()=>{active.value=(active.value+1)%3},paused)
-const slides=[['사람과 기술로,','내일을 만듭니다.'],['오늘의 시스템을,','더 단단하게.'],['새로운 가능성을,','업무의 변화로.']]
-const services=[{en:'Development',ko:'소프트웨어 개발',desc:'업무를 이해하는 설계에서 실제로 쓰이는 시스템까지.',body:'고객의 업무와 요구사항을 분석하고 업무 시스템과 웹 서비스를 설계·개발합니다. 요구사항 정의부터 구현, 시험, 배포와 인수인계까지 함께합니다.',tags:['업무 시스템','웹 서비스','시스템 연계'],icon:'⌘'}, {en:'IT Operations',ko:'유지보수 · 운영 지원',desc:'안정적인 오늘, 지속적으로 개선되는 내일.',body:'장애 대응, 오류 수정, 기능 개선과 운영 지원으로 업무의 연속성을 지킵니다. 지원 범위와 대응 시간, 변경 절차를 협의하고 작업 이력을 관리합니다.',tags:['유지보수','운영 지원','기능 개선'],icon:'↗'}, {en:'IT Professionals',ko:'IT 전문인력 지원',desc:'필요한 순간, 프로젝트에 맞는 전문역량을 연결합니다.',body:'프로젝트의 역할, 기술, 경력에 적합한 IT 전문인력을 연결합니다. 투입 전 업무 이해부터 협업과 인수인계까지 지원합니다. 구체적인 수행 형태와 범위는 상담을 통해 협의합니다.',tags:['전문역량 연결','프로젝트 지원','협업'],icon:'◎'}, {en:'AI Consulting',ko:'기업 AI 도입 컨설팅',desc:'업무 속 AI의 가능성을 찾고, 작은 검증부터 시작합니다.',body:'향후 확장할 서비스입니다. 업무 진단과 활용 과제 발굴, 도입 설계, PoC 검증, 시스템 연계와 현장 정착을 지원하는 방향으로 준비하고 있습니다.',tags:['확장 계획','업무 진단','PoC 검증'],icon:'✳'}]
-const selected=ref(0)
-const form=ref({name:'',email:'',service:'소프트웨어 개발',message:'',consent:false})
-function send(){const f=form.value; window.location.href=`mailto:${company.email}?subject=${encodeURIComponent('[THIT 상담] '+f.service)}&body=${encodeURIComponent('이름 / 회사: '+f.name+'\n회신 이메일: '+f.email+'\n\n'+f.message)}`;sent.value=true}
+function closeMenu(){menu.value=false;expandedGroup.value=null}
+function itemUrl(group,item){return pageUrl(group.id,item.service,item.id)}
 let previousFocus
 function close(){detail.value=null;document.body.style.overflow='';previousFocus?.focus()}
-function open(s){previousFocus=document.activeElement;detail.value=s;document.body.style.overflow='hidden';nextTick(()=>document.querySelector('.close')?.focus())}
-function key(e){if(e.key==='Escape'){if(detail.value)close();menu.value=false;expandedGroup.value=null}if(e.key==='Tab'&&detail.value){const nodes=[...document.querySelectorAll('.modal button,.modal a')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}}
+function open(service){previousFocus=document.activeElement;detail.value=service;document.body.style.overflow='hidden';nextTick(()=>document.querySelector('.close')?.focus())}
+function key(e){
+  if(e.key==='Escape'){if(detail.value)close();closeMenu()}
+  if(e.key==='Tab'&&detail.value){
+    const nodes=[...document.querySelectorAll('.modal button,.modal a')]
+    const first=nodes[0],last=nodes.at(-1)
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  }
+}
 onMounted(()=>window.addEventListener('keydown',key))
 onUnmounted(()=>window.removeEventListener('keydown',key))
 </script>
 <template>
-<a class="skip" href="#main">본문 바로가기</a>
-<header :class="{scrolled,'menu-open':menu}"><a href="#" class="logo" aria-label="THIT 홈"><img :src="logoUrl" alt="THIT"></a><nav :class="{show:menu}" aria-label="주 메뉴"><div v-for="(group,i) in navigation" :key="group.id" class="nav-group" :class="{expanded:expandedGroup===i,'nav-current':currentSection===group.id}" @pointerenter="e=>{if(e.pointerType==='mouse' && !menu)expandedGroup=i}" @mouseleave="expandedGroup=null" @focusout="e=>{if(!e.currentTarget.contains(e.relatedTarget))expandedGroup=null}"><button class="nav-parent" :aria-expanded="expandedGroup===i" :aria-controls="'nav-sub-'+i" @click="expandedGroup=expandedGroup===i?null:i" @keydown.esc="expandedGroup=null">{{group.label}}<svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button><div class="nav-dropdown" :id="'nav-sub-'+i" :inert="expandedGroup!==i"><span class="dropdown-label">{{group.label}}</span><a v-for="(item,j) in group.children" :key="item.label" :href="'#'+item.id" @click="navigate(item)"><small>0{{j+1}}</small>{{item.label}}<span>↗</span></a></div></div></nav><a class="header-contact" href="#contact">함께 시작하기 <span>↗</span></a><button class="menu" @click="menu=!menu;expandedGroup=null" :aria-expanded="menu" :aria-label="menu?'메뉴 닫기':'메뉴 열기'"><span></span><span></span></button><div class="reading-progress"></div></header>
-<main id="main">
-<section class="hero" :class="'hero-slide-'+active"><div class="art" aria-hidden="true"><div class="loop one"></div><div class="loop two"></div><div class="stem"></div><div class="art-node node-a"></div><div class="art-node node-b"></div><div class="art-grid"></div></div><div class="hero-copy"><p class="eyebrow">TOMORROW. HUMAN. INFORMATION TECHNOLOGY.</p><p class="intro">빠르게 변화하는 비즈니스 환경,<br><strong>사람을 이해하고 기술로 연결합니다.</strong></p><div class="headline-stage"><Transition name="headline" mode="out-in"><h1 :key="active" :aria-label="slides[active].join(' ')"><span v-for="(line,i) in slides[active]" :key="i" class="line-mask" aria-hidden="true"><span class="headline-line"><span v-for="(char,j) in [...line]" :key="j" :style="{'--char':j,'--line':i}">{{char===' '?'\u00a0':char}}</span></span></span></h1></Transition></div><a class="text-link" href="#company">THIT 알아보기 <span>↗</span></a><div class="slide-controls"><span>0{{active+1}}</span><div class="progress"><button v-for="(_,i) in slides" :class="{current:active===i}" :style="{'--fill':active===i?slideProgress:0}" :aria-label="(i+1)+'번 슬라이드'" @click="changeSlide(i)"></button></div><span class="muted">03</span><button @click="paused=!paused" :aria-label="paused?'자동 재생':'자동 재생 일시정지'">{{paused?'▶':'Ⅱ'}}</button></div></div><aside class="hero-cards"><a href="#services" class="mini blue"><div class="mini-top">BUILD YOUR TOMORROW <span>↗</span></div><div class="mini-symbol" aria-hidden="true"><ServiceVisual :variant="0" compact/></div><strong>Develop.<br>Operate. Connect.</strong><p>개발에서 운영까지, 함께하는 IT</p></a><a href="#ai" class="mini light"><div class="mini-top"><span>THE NEXT CHAPTER</span><span>↗</span></div><strong>AI, 업무의<br>가능성이 되다.</strong><span class="pill">AI 도입 컨설팅 · 확장 계획</span></a></aside><a class="scroll" href="#company">SCROLL TO EXPLORE <span>↓</span></a></section>
-<section id="company" class="company section"><div class="section-label"><i></i> WHO WE ARE</div><div class="company-top"><h2>Building Tomorrow<br>with <em>People & Technology.</em></h2><p>고객의 오늘을 지키고,<br>내일의 변화를 함께 만듭니다.</p></div><p class="statement"><span class="ink-line">업무를 이해하는 기술.</span><span class="ink-line">기술을 완성하는 사람.</span><span class="ink-line">오래 함께하는 IT 파트너, THIT.</span></p><div class="identity-strip" id="identity"><span class="identity-label">THE MEANING OF THIT</span><div><b>T<span>omorrow</span></b><small>고객의 내일을 함께 준비합니다.</small></div><i>×</i><div><b>H<span>uman</span></b><small>기술의 중심에 사람을 둡니다.</small></div><i>×</i><div><b>IT<span> / Information Technology</span></b><small>실제로 쓰이는 기술을 만듭니다.</small></div></div><div class="value-grid" id="values"><article v-for="(v,i) in [['Trust','신뢰','약속한 범위와 책임을 명확히 합니다.'],['Human','사람','업무와 현장의 경험을 먼저 이해합니다.'],['Execution','실행','제안을 실제 시스템과 변화로 연결합니다.'],['Improvement','지속적인 개선','구축 이후의 운영과 개선도 함께합니다.']]"><small>0{{i+1}} / OUR VALUES</small><h3>{{v[0]}}</h3><strong>{{v[1]}}</strong><p>{{v[2]}}</p></article></div></section>
-<section id="services" class="services section"><div class="section-label"><i></i> WHAT WE DO</div><div class="section-heading"><h2>필요한 기술을 연결하고,<br>비즈니스의 다음을 만듭니다.</h2><p>구축부터 운영, 전문역량 지원까지.<br>고객의 과제에 맞는 방식으로 함께합니다.</p></div><div class="service-layout"><div class="service-tabs" role="tablist" aria-label="서비스"><button v-for="(s,i) in services" :id="'tab-'+i" role="tab" :aria-selected="selected===i" :tabindex="selected===i?0:-1" @keydown="tabKey($event,i)" :aria-controls="'panel-'+i" :class="{active:selected===i}" @click="selected=i"><small>0{{i+1}}</small>{{s.ko}} <span>↗</span></button></div><Transition name="service" mode="out-in"><article :key="selected" class="service-panel" role="tabpanel" :id="'panel-'+selected" :aria-labelledby="'tab-'+selected"><div class="service-art" aria-hidden="true"><span class="visual-caption">THIT / 0{{selected+1}}</span><ServiceVisual :variant="selected"/><span class="visual-coordinate">PEOPLE × TECHNOLOGY</span></div><div class="service-info"><small>{{services[selected].en.toUpperCase()}}</small><h3>{{services[selected].ko}}</h3><p>{{services[selected].desc}}</p><div class="tags"><span v-for="tag in services[selected].tags">{{tag}}</span></div><button class="round-link" @click="open(services[selected])">서비스 자세히 보기 <span>↗</span></button></div></article></Transition></div></section>
-<section id="ai" class="ai section"><div class="section-label"><i></i> NEXT POSSIBILITY <span class="pill">확장 계획</span></div><div class="ai-grid"><div><h2>AI의 가능성을,<br><span>현장의 변화로.</span></h2><p>도구보다 업무의 문제를 먼저 봅니다.<br>작은 과제의 검증에서 시작하는 기업 AI 도입을 준비합니다.</p><button class="text-link" @click="open(services[3])">AI 컨설팅 방향 알아보기 <span>↗</span></button></div><div class="ai-visual" aria-hidden="true"><ServiceVisual :variant="3"/><small>HUMAN × TECHNOLOGY</small></div></div><div class="ai-use" id="ai-use"><span>사내 지식 검색</span><span>문서 업무 보조</span><span>반복 업무 지원</span></div><div class="ai-process" id="ai-process"><div class="ai-process-title"><small>AI ADOPTION ROADMAP</small><p>작은 검증에서 시작하는 변화</p></div><ol><li v-for="(step,i) in ['진단','설계','검증','적용','개선']"><small>0{{i+1}}</small><span>{{step}}</span><i v-if="i<4">↗</i></li></ol></div></section>
-<section id="approach" class="section approach"><div class="section-label"><i></i> HOW WE WORK</div><div class="section-heading"><h2>시작부터 그다음까지,<br>함께하는 방식.</h2><p>단발성 구축을 넘어<br>지속적으로 활용할 수 있는 기술을 만듭니다.</p></div><div class="steps"><article v-for="(s,i) in [['Understand','업무 이해','현장의 업무와 문제를 듣고 필요한 범위를 함께 정합니다.'],['Connect','기술과 사람 연결','과제에 맞는 개발 방식과 전문역량을 연결합니다.'],['Build','구축과 적용','설계와 구현, 시험을 거쳐 실제 업무에 적용합니다.'],['Improve','운영과 개선','운영 피드백을 바탕으로 안정성과 활용도를 높입니다.']]"><span>0{{i+1}} ↗</span><h3>{{s[0]}}</h3><strong>{{s[1]}}</strong><p>{{s[2]}}</p></article></div></section>
-<section id="contact" class="contact section"><div><div class="section-label"><i></i> LET'S WORK TOGETHER</div><h2>함께 만들 내일을<br>이야기해 주세요.</h2><p>지금 필요한 개발부터 운영의 고민까지,<br>THIT가 함께 생각하겠습니다.</p><a :href="'mailto:'+company.email" class="email">{{company.email}} ↗</a><p class="contact-details" id="contact-details">{{company.tel}}<br>{{company.address}}</p></div><form @submit.prevent="send"><label>이름 / 회사명<input required v-model="form.name" placeholder="이름과 회사명을 입력해 주세요" maxlength="100"></label><label>회신 이메일<input type="email" required v-model="form.email" placeholder="name@company.com"></label><label>관심 서비스<select v-model="form.service"><option v-for="s in services">{{s.ko}}</option></select></label><label>문의 내용<textarea required v-model="form.message" placeholder="어떤 도움이 필요하신가요?" rows="3" maxlength="5000"></textarea></label><label class="check"><input type="checkbox" required v-model="form.consent">문의 회신을 위해 입력한 정보를 이메일로 전달하는 데 동의합니다.</label><button class="submit">이메일로 상담 요청하기 <span>↗</span></button><p class="form-note" role="status">{{sent?'메일 앱에서 내용을 확인한 뒤 전송해 주세요. 아직 문의가 접수되지는 않았습니다.':'기본 메일 앱이 열립니다. 내용 확인 후 직접 전송해 주세요.'}}</p></form></section>
-</main><footer><img :src="logoUrl" alt="THIT"><p>Tomorrow · Human · Information Technology<br>사람과 기술로 내일을 만듭니다.</p><div>대표 {{company.ceo}} · 사업자등록번호 {{company.bizNo}}<br>© {{new Date().getFullYear()}} THIT. All rights reserved.</div><a href="#">BACK TO TOP ↑</a></footer><a class="floating" href="#contact" aria-label="상담 문의">↗</a>
-<Transition name="dialog"><div v-if="detail" class="modal-backdrop" @click.self="close"><section class="modal" role="dialog" aria-modal="true" :aria-label="detail.ko"><button class="close" @click="close" autofocus aria-label="닫기">✕</button><small>{{detail.en}}</small><h2>{{detail.ko}}</h2><p>{{detail.body}}</p><div class="tags"><span v-for="t in detail.tags">{{t}}</span></div><a href="#contact" class="submit" @click="close">상담하기 ↗</a></section></div></Transition>
+  <a class="skip" href="#main">본문 바로가기</a>
+  <header :class="{scrolled,'menu-open':menu}">
+    <a :href="pageUrl()" class="logo" aria-label="THIT 홈"><img :src="logoUrl" alt="THIT"></a>
+    <nav :class="{show:menu}" aria-label="주 메뉴">
+      <div v-for="(group,i) in navigation" :key="group.id" class="nav-group" :class="{expanded:expandedGroup===i,'nav-current':currentPage===group.id}"
+        @pointerenter="e=>{if(e.pointerType==='mouse'&&!menu)expandedGroup=i}" @mouseleave="expandedGroup=null"
+        @focusout="e=>{if(!e.currentTarget.contains(e.relatedTarget))expandedGroup=null}">
+        <div class="nav-parent">
+          <a :href="pageUrl(group.id)" :aria-current="currentPage===group.id?'page':undefined" @click="closeMenu">{{group.label}}</a>
+          <button class="nav-toggle" :aria-label="group.label+' 하위 메뉴'" :aria-expanded="expandedGroup===i" :aria-controls="'nav-sub-'+i" @click="expandedGroup=expandedGroup===i?null:i" @keydown.esc="expandedGroup=null">
+            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg>
+          </button>
+        </div>
+        <div class="nav-dropdown" :id="'nav-sub-'+i" :inert="expandedGroup!==i">
+          <span class="dropdown-label">{{group.label}}</span>
+          <a v-for="(item,j) in group.children" :key="item.label" :href="itemUrl(group,item)" @click="closeMenu"><small>0{{j+1}}</small>{{item.label}}<span>↗</span></a>
+        </div>
+      </div>
+    </nav>
+    <a class="header-contact" :href="pageUrl('contact')">함께 시작하기 <span>↗</span></a>
+    <button class="menu" @click="menu=!menu;expandedGroup=null" :aria-expanded="menu" :aria-label="menu?'메뉴 닫기':'메뉴 열기'"><span></span><span></span></button>
+    <div class="reading-progress"></div>
+  </header>
+  <main id="main" :class="{'inner-page':currentPage!=='home'}">
+    <template v-if="pageInfo">
+      <section class="page-intro">
+        <div class="breadcrumb"><a :href="pageUrl()">Home</a><span>/</span><span>{{pageInfo.label}}</span></div>
+        <div class="page-intro-heading"><div><p class="eyebrow">{{pageInfo.label.toUpperCase()}}</p><h1>{{pageInfo.title}}</h1><p>{{pageInfo.description}}</p><span v-if="currentPage==='ai'" class="pill">확장 계획</span></div><span class="page-number" aria-hidden="true">0{{navigation.findIndex(g=>g.id===currentPage)+1}}</span></div>
+      </section>
+      <nav class="page-subnav" :aria-label="pageInfo.label+' 페이지 내 메뉴'"><a v-for="item in pageInfo.children" :href="itemUrl(pageInfo,item)">{{item.label}}</a></nav>
+    </template>
+    <component :is="pages[currentPage]" v-bind="currentPage==='home'?{active,paused,slideProgress}:{}" @slide="changeSlide" @pause="paused=!paused" @open="open"/>
+    <section v-if="currentPage!=='home'&&currentPage!=='contact'" class="page-contact-band"><div><small>LET'S BUILD YOUR TOMORROW</small><h2>다음 이야기를 시작할까요?</h2></div><a class="text-link" :href="pageUrl('contact')">프로젝트 상담 <span>↗</span></a></section>
+  </main>
+  <footer>
+    <a :href="pageUrl()" aria-label="THIT 홈"><img :src="logoUrl" alt="THIT"></a><p>Tomorrow · Human · Information Technology<br>사람과 기술로 내일을 만듭니다.</p>
+    <div>대표 {{company.ceo}} · 사업자등록번호 {{company.bizNo}}<br>© {{new Date().getFullYear()}} THIT. All rights reserved.</div><a href="#main">BACK TO TOP ↑</a>
+  </footer>
+  <a class="floating" :href="pageUrl('contact')" aria-label="상담 문의">↗</a>
+  <Transition name="dialog"><div v-if="detail" class="modal-backdrop" @click.self="close"><section class="modal" role="dialog" aria-modal="true" :aria-label="detail.ko"><button class="close" @click="close" aria-label="닫기">✕</button><small>{{detail.en}}</small><h2>{{detail.ko}}</h2><p>{{detail.body}}</p><div class="tags"><span v-for="tag in detail.tags">{{tag}}</span></div><a :href="pageUrl('contact')" class="submit" @click="close">상담하기 ↗</a></section></div></Transition>
 </template>

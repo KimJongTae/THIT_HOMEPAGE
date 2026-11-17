@@ -8,16 +8,16 @@ export function useMotion(onSlide, paused) {
  onMounted(()=>{
   media=matchMedia('(prefers-reduced-motion: reduce)');hero=document.querySelector('.hero');story=document.querySelector('.statement')
   observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');observer.unobserve(e.target)}}),{threshold:.1,rootMargin:'0px 0px -25px 0px'})
-  document.querySelectorAll('.section-label,.company-top,.section-heading,.statement,.value-grid article,.service-layout,.ai-grid,.ai-use,.steps article,.contact>div,.contact form,.identity-strip,.ai-process').forEach((el,i)=>{el.classList.add('reveal');el.style.setProperty('--delay',`${el.matches('article')?(i%4)*85:0}ms`);observer.observe(el)})
+  document.querySelectorAll('.section-label,.company-top,.section-heading,.statement,.value-grid article,.service-layout,.ai-grid,.ai-use,.steps article,.contact>div,.contact form,.identity-strip,.ai-process,.home-service-grid>a,.home-company>div,.mission-grid,.scope-section,.ai-principles,.approach-note').forEach((el,i)=>{el.classList.add('reveal');el.style.setProperty('--delay',`${el.matches('article')?(i%4)*85:0}ms`);observer.observe(el)})
   document.documentElement.classList.add('motion-ready')
   sectionObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)currentSection.value=e.target.id}),{rootMargin:'-15% 0px -60% 0px'})
-  document.querySelectorAll('main>section[id]').forEach(el=>sectionObserver.observe(el))
+  document.querySelectorAll('main section[id]').forEach(el=>sectionObserver.observe(el))
   window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('pointermove',pointer,{passive:true})
   const tick=t=>{
    const dt=last?Math.min(t-last,80):0;last=t
-   if(!document.hidden&&!paused.value&&!media.matches){elapsed+=dt;slideProgress.value=Math.min(elapsed/6500,1);if(elapsed>=6500){onSlide();reset()}}
-   if(dirty){const sy=window.scrollY;scrolled.value=sy>30;document.documentElement.style.setProperty('--read',`${sy/Math.max(1,document.documentElement.scrollHeight-innerHeight)*100}%`);if(!media.matches){hero.style.setProperty('--scroll-y',`${Math.min(sy,innerHeight)*.17}px`);const r=story.getBoundingClientRect();story.style.setProperty('--ink',`${Math.max(0,Math.min(1,(innerHeight*.8-r.top)/(innerHeight*.65)))*100}%`)}dirty=false}
-   if(!media.matches&&innerWidth>700&&window.scrollY<innerHeight){x+=(pointerX-x)*.035;y+=(pointerY-y)*.035;hero.style.setProperty('--mx',`${x}px`);hero.style.setProperty('--my',`${y}px`)}
+   if(hero&&!document.hidden&&!paused.value&&!media.matches){elapsed+=dt;slideProgress.value=Math.min(elapsed/6500,1);if(elapsed>=6500){onSlide();reset()}}
+   if(dirty){const sy=window.scrollY;scrolled.value=sy>30;document.documentElement.style.setProperty('--read',`${sy/Math.max(1,document.documentElement.scrollHeight-innerHeight)*100}%`);if(!media.matches){hero?.style.setProperty('--scroll-y',`${Math.min(sy,innerHeight)*.17}px`);const r=story?.getBoundingClientRect();if(r)story.style.setProperty('--ink',`${Math.max(0,Math.min(1,(innerHeight*.8-r.top)/(innerHeight*.65)))*100}%`)}dirty=false}
+   if(hero&&!media.matches&&innerWidth>700&&window.scrollY<innerHeight){x+=(pointerX-x)*.035;y+=(pointerY-y)*.035;hero.style.setProperty('--mx',`${x}px`);hero.style.setProperty('--my',`${y}px`)}
    frame=requestAnimationFrame(tick)
   };frame=requestAnimationFrame(tick)
  })

@@ -1,0 +1,4 @@
+<script setup>
+import {pageUrl} from '../site'
+</script>
+<template><section id="approach" class="section approach"><div class="section-label"><i></i> HOW WE WORK</div><div class="section-heading"><h2>시작부터 그다음까지,<br>함께하는 방식.</h2><p>단발성 구축을 넘어<br>지속적으로 활용할 수 있는 기술을 만듭니다.</p></div><div class="steps"><article v-for="(s,i) in [['Understand','업무 이해','현장의 업무와 문제를 듣고 필요한 범위를 함께 정합니다.'],['Connect','기술과 사람 연결','과제에 맞는 개발 방식과 전문역량을 연결합니다.'],['Build','구축과 적용','설계와 구현, 시험을 거쳐 실제 업무에 적용합니다.'],['Improve','운영과 개선','운영 피드백을 바탕으로 안정성과 활용도를 높입니다.']]"><span>0{{i+1}} ↗</span><h3>{{s[0]}}</h3><strong>{{s[1]}}</strong><p>{{s[2]}}</p></article></div><div class="approach-note"><small>OUR COMMITMENT</small><h2>범위는 명확하게.<br>변화는 지속적으로.</h2><p>수행 범위와 일정, 운영 책임을 먼저 협의합니다. 구축 이후에는 운영 피드백을 바탕으로 안정성과 활용도를 높입니다.</p><a class="text-link" :href="pageUrl('contact')">프로젝트 이야기 나누기 <span>↗</span></a></div></section></template>
